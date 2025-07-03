@@ -1,0 +1,47 @@
+name: Laravel CI/CD with Artifact Folder
+
+on:
+  push:
+    branches:
+      - main # ganti jika kamu pakai branch lain
+
+jobs:
+  laravel-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      TEMP_DIR: temp
+      DEPLOY_DIR: ../deploy
+      COMPOSER_ALLOW_SUPERUSER: 1
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: 🛠 Setup PHP & Install Dependencies
+        run: |
+          sudo apt-get update -yqq
+          sudo apt-get install -y unzip git curl rsync
+          curl -sS https://getcomposer.org/installer | php
+
+      - name: 🌀 Clone source to ${{ env.TEMP_DIR }}
+        run: |
+          mkdir -p $TEMP_DIR
+          rsync -av --exclude=$TEMP_DIR --exclude=$DEPLOY_DIR --exclude=.git ./ $TEMP_DIR/
+
+      - name: ⚙️ Build Laravel (composer, artisan cache)
+        run: |
+          cd $TEMP_DIR
+          php ../composer.phar install --no-dev --optimize-autoloader
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          cd ..
+
+      - name: 🚀 Deploy to external folder ${{ env.DEPLOY_DIR }}
+        run: |
+          rm -rf $DEPLOY_DIR
+          mkdir -p $DEPLOY_DIR
+          rsync -av $TEMP_DIR/ $DEPLOY_DIR/
+          echo "✅ Deployed contents:"
+          ls -la $DEPLOY_DIR

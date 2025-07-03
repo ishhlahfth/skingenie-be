@@ -1,0 +1,56 @@
+image: php:8.2
+
+stages:
+  - clone
+  - build
+  - deploy
+
+variables:
+  COMPOSER_ALLOW_SUPERUSER: 1
+  TEMP_DIR: ./temp
+  DEPLOY_DIR: ../deploy
+
+before_script:
+  - apt-get update -yqq
+  - apt-get install -y unzip git curl rsync
+  - curl -sS https://getcomposer.org/installer | php
+
+clone:
+  stage: clone
+  script:
+    - echo "🌀 Cloning source code to $TEMP_DIR"
+    - mkdir -p $TEMP_DIR
+    - rsync -av --exclude=$TEMP_DIR --exclude=$DEPLOY_DIR --exclude=.git ./ $TEMP_DIR/
+  artifacts:
+    paths:
+      - $TEMP_DIR/
+    expire_in: 1 hour
+
+build:
+  stage: build
+  dependencies:
+    - clone
+  script:
+    - echo "⚙️ Running Laravel build in $TEMP_DIR"
+    - cd $TEMP_DIR
+    - php ../composer.phar install --no-dev --optimize-autoloader
+    - php artisan config:cache
+    - php artisan route:cache
+    - php artisan view:cache
+    - cd ..
+  artifacts:
+    paths:
+      - $TEMP_DIR/
+    expire_in: 1 hour
+
+deploy:
+  stage: deploy
+  dependencies:
+    - build
+  script:
+    - echo "🚀 Deploying to external folder: $DEPLOY_DIR"
+    - rm -rf $DEPLOY_DIR
+    - mkdir -p $DEPLOY_DIR
+    - rsync -av $TEMP_DIR/ $DEPLOY_DIR/
+    - echo "✅ Deployed contents:"
+    - ls -la $DEPLOY_DIR
