@@ -122,9 +122,16 @@ class RecommendationController extends Controller
 
             $response = $response->json();
 
-            $productDetail = Skincare::where('id', $response['data']['recommended_id'])->first();
+            // $productDetail = Skincare::where('id', $response['data']['recommended_id'])->first();
 
-            return new GeneralResponse(true, 'Recommendation Submission ', $productDetail);
+            $recommend = [];
+
+            foreach($response['data']['recommended_id'] as $each) {
+                $eachDetail = Skincare::where('id', $each)->first();
+                $recommend[] = $eachDetail;
+            }
+
+            return new GeneralResponse(true, 'Recommendation Submission ', $recommend);
         } catch (\Throwable $th) {
             return new GeneralResponse(false, 'Recommendation Submission ' . $th->getMessage(), []);
         }
