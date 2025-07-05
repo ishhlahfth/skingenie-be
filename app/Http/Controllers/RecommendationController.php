@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Resources\GeneralResponse;
 use App\Http\Resources\SkincareDataResource;
 use App\Models\Criteria;
+use App\Models\RecommendSubmission;
 use App\Models\Skincare;
 use App\Models\SkincareCat;
+use App\Models\SubmissionUser;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -21,6 +24,10 @@ class RecommendationController extends Controller
             $price_from = $request->input('price_from');
             $price_to = $request->input('price_to');
             $recommend = $request->input('recommend');
+
+            $user_name = $request->input('user_name');
+            $user_email = $request->input('user_email');
+            $user_phone = $request->input('user_phone');
 
             $tipeDet = Criteria::where('id', $tipeInp)->first();
             $concernDet = Criteria::where('id', $concernInp)->first();
@@ -122,19 +129,57 @@ class RecommendationController extends Controller
 
             $response = $response->json();
 
-            // $productDetail = Skincare::where('id', $response['data']['recommended_id'])->first();
+            $productDetail = Skincare::where('id', $response['data']['recommended_id'])->first();
 
-            $recommend = [];
+            $others = [];
 
-            foreach($response['data']['recommended_id'] as $each) {
+            foreach ($response['data']['other'] as $each) {
                 $eachDetail = Skincare::where('id', $each)->first();
-                $recommend[] = $eachDetail;
+                $others[] = $eachDetail;
             }
 
-            return new GeneralResponse(true, 'Recommendation Submission ', $recommend);
+            $postUser = SubmissionUser::create([
+                'full_name' => $user_name,
+                'email' => $user_email,
+                'phone' => $user_phone,
+            ]);
+            if ($postUser) {
+                $postSubmission = RecommendSubmission::create([
+                    'category_uuid' => $category_id,
+                    'price_start' => $price_from,
+                    'price_to' => $price_to,
+                    'user_uuid' => $postUser->uuid,
+                    'rec_skincare_uuid' => $productDetail->id,
+                ]);
+                if (!$postSubmission) {
+                    return new GeneralResponse(false, 'Failed to save record', []);
+                }
+            } else {
+                return new GeneralResponse(false, 'Failed to save user', []);
+            }
+
+            $response = [
+                'recommended' => $productDetail,
+                'others' => $others,
+            ];
+
+            return new GeneralResponse(true, 'Recommendation Submission ', $response);
         } catch (\Throwable $th) {
             return new GeneralResponse(false, 'Recommendation Submission ' . $th->getMessage(), []);
         }
+    }
+
+    public function testApi(Request $request)
+    {
+        $category_id = $request->input('category_id');
+        $data = Skincare::bycat($category_id)->with('ref_criteria')
+            ->get();
+
+        $response = [
+            'count' => count($data),
+            'data' => $data,
+        ];
+        return new GeneralResponse(true, 'Recommendation Submission ', $response);
     }
 
     function priceRateValue($from, $to)

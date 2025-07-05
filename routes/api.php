@@ -13,4 +13,6 @@ Route::prefix('options')->group(function () {
 Route::prefix('submission')->group(function () {
     Route::post('request', [RecommendationController::class, 'submitRecommendation']);
 });
+Route::get('/test', [RecommendationController::class, 'testApi']);
+
 
