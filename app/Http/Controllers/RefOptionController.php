@@ -10,7 +10,7 @@ class RefOptionController extends Controller
 {
     public function getCategoryOption() {
         try {
-            $data = Categories::orderBy('created_at')->get();
+            $data = Categories::orderBy('created_at')->where('is_active', 1)->get();
             $result = [];
             foreach($data as $dt) {
                 $result[] = [

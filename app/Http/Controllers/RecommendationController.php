@@ -207,7 +207,7 @@ class RecommendationController extends Controller
             $result = 6;
         } else if ($value <= 100) {
             $result = 7;
-        } else if ($value <= 100) {
+        } else if ($value <= 150) {
             $result = 8;
         } else {
             $result = 9;
