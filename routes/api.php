@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\RefOptionController;
 use App\Http\Controllers\SociollaController;
@@ -13,6 +14,5 @@ Route::prefix('options')->group(function () {
 Route::prefix('submission')->group(function () {
     Route::post('request', [RecommendationController::class, 'submitRecommendation']);
 });
+Route::get('/dashboard', [DashboardController::class, 'index']);
 Route::get('/test', [RecommendationController::class, 'testApi']);
-
-

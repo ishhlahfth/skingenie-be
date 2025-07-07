@@ -22,4 +22,14 @@ class RecommendSubmission extends Model
         'user_uuid',
         'rec_skincare_uuid',
     ];
+
+    public function ref_skincare()
+    {
+        return $this->hasOne(Skincare::class, 'id', 'rec_skincare_uuid');
+    }
+
+    public function ref_category()
+    {
+        return $this->hasOne(Categories::class, 'id', 'category_uuid');
+    }
 }
